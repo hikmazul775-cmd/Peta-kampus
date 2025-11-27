@@ -1,6 +1,6 @@
 # =============================================
-# FINAL - APLIKASI PETA DIGITAL LOKASI KAMPUS
-# STREAMLIT + PYTHON (STABIL & BEBAS ERROR)
+# FINAL - APLIKASI PETA DIGITAL KAMPUS UNSA
+# STREAMLIT + PYTHON (STABIL)
 # =============================================
 # Cara menjalankan:
 # 1. pip install streamlit pandas folium streamlit-folium
@@ -22,37 +22,38 @@ except Exception:
 # =============================================
 # KONFIGURASI HALAMAN
 # =============================================
-st.set_page_config(page_title="Peta Digital Lokasi Kampus", layout="wide")
-st.title("📍 Aplikasi Peta Digital Lokasi Kampus")
-st.write("Menampilkan peta interaktif lokasi gedung dan fasilitas kampus.")
+st.set_page_config(page_title="Peta Digital Kampus UNSA", layout="wide")
+st.title("📍 Aplikasi Peta Digital Kampus Universitas Al Asyariah Mandar")
+st.write("Menampilkan peta interaktif lokasi gedung dan fasilitas Kampus UNSA.")
 
 # =============================================
-# DATA DEFAULT
+# DATA DEFAULT - TITIK LOKASI DI KAMPUS UNSA
+# (Simulasi posisi sekitar koordinat kampus)
 # =============================================
 data = {
     "nama": [
         "Rektorat",
         "Perpustakaan",
-        "Gedung Teknik",
-        "Gedung Ekonomi",
+        "Gedung Fakultas Kesehatan",
+        "Gedung Fakultas Teknik",
         "Masjid Kampus",
         "Lapangan Olahraga"
     ],
     "lat": [
-        -5.147665,
-        -5.148200,
-        -5.149000,
-        -5.147900,
-        -5.146800,
-        -5.150500
+        -3.404352,     # Rektorat
+        -3.404150,     # Perpustakaan
+        -3.404700,     # Fikes
+        -3.403900,     # Fakultas Teknik
+        -3.404500,     # Masjid
+        -3.403600      # Lapangan
     ],
     "lon": [
-        119.432731,
-        119.431900,
-        119.434200,
-        119.430800,
-        119.433500,
-        119.435100
+        119.305593,    # Rektorat
+        119.305800,    # Perpustakaan
+        119.305300,    # Fikes
+        119.306000,    # Fakultas Teknik
+        119.305450,    # Masjid
+        119.306200     # Lapangan
     ],
     "kategori": [
         "Administrasi",
@@ -81,19 +82,14 @@ df_filter = df[df['kategori'].isin(kategori_pilihan)]
 # =============================================
 # TAMPILAN PETA
 # =============================================
-st.subheader("🗺️ Peta Kampus")
+st.subheader("🗺️ Peta Kampus UNSA")
 
-# fallback coordinates if df_filter empty
-if df_filter.empty:
-    # gunakan rata-rata seluruh dataset atau 0 jika juga kosong
-    center_lat = df['lat'].mean() if not df.empty else 0
-    center_lon = df['lon'].mean() if not df.empty else 0
-else:
-    center_lat = df_filter['lat'].mean()
-    center_lon = df_filter['lon'].mean()
+# fallback coordinates (menggunakan koordinat UNSA)
+center_lat = -3.404352
+center_lon = 119.305593
 
 if folium_available:
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=17)
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=18)
 
     cluster = MarkerCluster().add_to(m)
 
@@ -118,12 +114,10 @@ if folium_available:
     st_folium(m, width=900, height=600)
 
 else:
-    # Perbaikan: gunakan satu string (tanpa memecah baris dengan tanda kutip yang belum ditutup)
     st.warning(
         "Folium belum terinstall. Menampilkan peta sederhana.\n"
         "Install dengan: pip install folium streamlit-folium"
     )
-    # ubah nama kolom supaya st.map menerima latitude/longitude
     if not df_filter.empty:
         df_map = df_filter.rename(columns={"lat": "latitude", "lon": "longitude"})
         st.map(df_map[["latitude", "longitude"]])
@@ -133,7 +127,7 @@ else:
 # =============================================
 # TABEL DATA
 # =============================================
-st.subheader("📊 Data Lokasi Kampus")
+st.subheader("📊 Data Lokasi Kampus UNSA")
 st.dataframe(df_filter)
 
 # =============================================
@@ -152,16 +146,11 @@ if uploaded_file is not None:
         else:
             st.dataframe(df_upload)
 
-            # fallback center coords for uploaded file
-            if df_upload.empty:
-                up_center_lat = df['lat'].mean() if not df.empty else 0
-                up_center_lon = df['lon'].mean() if not df.empty else 0
-            else:
-                up_center_lat = df_upload['lat'].mean()
-                up_center_lon = df_upload['lon'].mean()
+            up_center_lat = df_upload['lat'].mean() if not df_upload.empty else center_lat
+            up_center_lon = df_upload['lon'].mean() if not df_upload.empty else center_lon
 
             if folium_available:
-                m2 = folium.Map(location=[up_center_lat, up_center_lon], zoom_start=17)
+                m2 = folium.Map(location=[up_center_lat, up_center_lon], zoom_start=18)
 
                 for _, row in df_upload.iterrows():
                     folium.Marker(
@@ -188,6 +177,6 @@ if uploaded_file is not None:
 # =============================================
 st.markdown("---")
 st.caption(
-    "Aplikasi Peta Digital Kampus - Streamlit Python (Final Version - Stabil)\n"
+    "Aplikasi Peta Digital Kampus UNSA - Streamlit Python (Final Version)\n"
     "Pastikan folium sudah terinstall agar peta interaktif aktif."
 )
