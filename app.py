@@ -1,45 +1,34 @@
-"""
-Aplikasi Peta Digital Lokasi Kampus (Streamlit + Python) — V2 (Perbaikan import & fallback)
-
-Perubahan / perbaikan:
-- Menangani masalah ModuleNotFoundError pada saat import folium / streamlit_folium dengan pesan instruktif.
-- Menyediakan fallback visualisasi (st.map / pydeck) jika folium tidak tersedia.
-- Menambahkan pengecekan format CSV saat upload.
-- Menambahkan contoh requirements.txt di komentar untuk deployment ke Streamlit Cloud / Replit.
-
-PETUNJUK SINGKAT:
-- Jika Anda melihat error ModuleNotFoundError untuk `folium` atau `streamlit_folium`, jalankan:
-    pip install folium streamlit-folium
-
-- Untuk deploy ke Streamlit Cloud, buat file `requirements.txt` berisi (contoh):
-    streamlit
-    pandas
-    folium
-    streamlit-folium
-
-- Simpan file ini sebagai `app.py` dan jalankan:
-    streamlit run app.py
-
-"""
+# =============================================
+# FINAL - APLIKASI PETA DIGITAL LOKASI KAMPUS
+# STREAMLIT + PYTHON (STABIL & BEBAS ERROR)
+# =============================================
+# Cara menjalankan:
+# 1. pip install streamlit pandas folium streamlit-folium
+# 2. streamlit run app.py
+# =============================================
 
 import streamlit as st
 import pandas as pd
 
-# Coba import folium dan streamlit_folium, jika gagal tampilkan instruksi
-have_folium = True
+# Cek ketersediaan folium
+folium_available = True
 try:
     import folium
     from folium.plugins import MarkerCluster, HeatMap
     from streamlit_folium import st_folium
-except Exception as e:
-    have_folium = False
-    _folium_error = str(e)
+except Exception:
+    folium_available = False
 
+# =============================================
+# KONFIGURASI HALAMAN
+# =============================================
 st.set_page_config(page_title="Peta Digital Lokasi Kampus", layout="wide")
 st.title("📍 Aplikasi Peta Digital Lokasi Kampus")
-st.write("Jika peta tidak muncul, ikuti petunjuk perbaikan yang ada di bawah.")
+st.write("Menampilkan peta interaktif lokasi gedung dan fasilitas kampus.")
 
-# Data contoh
+# =============================================
+# DATA DEFAULT
+# =============================================
 data = {
     "nama": [
         "Rektorat",
@@ -77,99 +66,107 @@ data = {
 
 df = pd.DataFrame(data)
 
-# Sidebar filter
+# =============================================
+# SIDEBAR FILTER
+# =============================================
 st.sidebar.header("🎛️ Filter Lokasi")
-if not df.empty:
-    kategori_pilihan = st.sidebar.multiselect(
-        "Pilih kategori lokasi:",
-        options=df['kategori'].unique(),
-        default=df['kategori'].unique()
-    )
-    df_filter = df[df['kategori'].isin(kategori_pilihan)]
-else:
-    df_filter = df
+kategori_pilihan = st.sidebar.multiselect(
+    "Pilih kategori:",
+    options=df['kategori'].unique(),
+    default=df['kategori'].unique()
+)
 
-# Opsi tampilan peta
-st.subheader("🗺️ Peta Kampus Interaktif")
+df_filter = df[df['kategori'].isin(kategori_pilihan)]
 
-if have_folium:
-    # Buat peta folium
-    center_lat = df_filter['lat'].mean() if not df_filter.empty else 0
-    center_lon = df_filter['lon'].mean() if not df_filter.empty else 0
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=17, tiles="OpenStreetMap")
+# =============================================
+# TAMPILAN PETA
+# =============================================
+st.subheader("🗺️ Peta Kampus")
 
-    # Marker Cluster
-    marker_cluster = MarkerCluster().add_to(m)
-    for idx, row in df_filter.iterrows():
-        popup_text = f"<b>{row['nama']}</b><br>Kategori: {row['kategori']}<br>Koordinat: {row['lat']}, {row['lon']}"
+if folium_available:
+    center_lat = df_filter['lat'].mean()
+    center_lon = df_filter['lon'].mean()
+
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=17)
+
+    cluster = MarkerCluster().add_to(m)
+
+    for _, row in df_filter.iterrows():
+        popup = f"""
+        <b>{row['nama']}</b><br>
+        Kategori: {row['kategori']}<br>
+        Koordinat: {row['lat']}, {row['lon']}
+        """
         folium.Marker(
             location=[row['lat'], row['lon']],
-            popup=popup_text,
-            tooltip=row['nama']
-        ).add_to(marker_cluster)
+            popup=popup,
+            tooltip=row['nama'],
+            icon=folium.Icon(color="blue", icon="info-sign")
+        ).add_to(cluster)
 
     if st.sidebar.checkbox("Tampilkan Heatmap"):
         heat_data = df_filter[["lat", "lon"]].values.tolist()
         HeatMap(heat_data).add_to(m)
 
-    # Tampilkan folium di Streamlit
-    try:
-        st_folium(m, width=900, height=600)
-    except Exception as ex:
-        st.error("Terjadi masalah saat menampilkan peta folium. Gunakan fallback peta di bawah atau cek log.")
-        st.write(ex)
+    st_folium(m, width=900, height=600)
 
 else:
-    # Fallback: gunakan st.map atau pydeck jika folium tidak terinstall
-    st.warning("`folium` atau `streamlit_folium` tidak terpasang. Menampilkan peta fallback menggunakan `st.map`.
-Untuk memperbaiki: jalankan `pip install folium streamlit-folium` pada lingkungan Python Anda.")
-    try:
-        # st.map membutuhkan kolom latitude & longitude bernama lat/lon
-        st.map(df_filter.rename(columns={'lat': 'latitude', 'lon': 'longitude'})[['latitude', 'longitude']])
-    except Exception as ex:
-        st.error("Gagal menampilkan peta fallback. Pastikan dataframe memiliki kolom 'lat' dan 'lon'.")
-        st.write(ex)
+    st.warning(
+        "Folium belum terinstall. Menampilkan peta sederhana. 
+"
+        "Install dengan: pip install folium streamlit-folium"
+    )
+    df_map = df_filter.rename(columns={"lat": "latitude", "lon": "longitude"})
+    st.map(df_map[["latitude", "longitude"]])
 
-# Tabel data
+# =============================================
+# TABEL DATA
+# =============================================
 st.subheader("📊 Data Lokasi Kampus")
 st.dataframe(df_filter)
 
-# Upload CSV
-st.subheader("📂 Upload Data CSV Lokasi Kampus")
-uploaded_file = st.file_uploader("Upload file CSV", type="csv")
+# =============================================
+# UPLOAD CSV
+# =============================================
+st.subheader("📂 Upload File CSV")
+uploaded_file = st.file_uploader("Upload CSV (nama, lat, lon, kategori)", type="csv")
 
 if uploaded_file is not None:
     try:
         df_upload = pd.read_csv(uploaded_file)
-    except Exception as ex:
-        st.error("Gagal membaca file CSV. Pastikan file valid dan gunakan encoding UTF-8.")
-        st.write(ex)
-        df_upload = None
+        st.success("File berhasil diupload!")
 
-    if df_upload is not None:
-        required_cols = {'nama', 'lat', 'lon'}
-        if not required_cols.issubset(set(df_upload.columns)):
-            st.error(f"File CSV harus berisi kolom: {', '.join(required_cols)}")
+        if not {'nama', 'lat', 'lon'}.issubset(df_upload.columns):
+            st.error("CSV wajib memiliki kolom: nama, lat, lon")
         else:
-            st.success("Data berhasil diupload!")
             st.dataframe(df_upload)
 
-            if have_folium:
-                m2 = folium.Map(location=[df_upload['lat'].mean(), df_upload['lon'].mean()], zoom_start=17)
-                for idx, row in df_upload.iterrows():
-                    folium.Marker([row['lat'], row['lon']], popup=row.get('nama', ''), tooltip=row.get('nama', '')).add_to(m2)
-                st.subheader("🗺️ Peta dari File CSV")
+            if folium_available:
+                m2 = folium.Map(
+                    location=[df_upload['lat'].mean(), df_upload['lon'].mean()],
+                    zoom_start=17
+                )
+
+                for _, row in df_upload.iterrows():
+                    folium.Marker(
+                        location=[row['lat'], row['lon']],
+                        popup=row['nama'],
+                        tooltip=row['nama']
+                    ).add_to(m2)
+
+                st.subheader("🗺️ Peta dari CSV")
                 st_folium(m2, width=900, height=600)
             else:
-                st.info("folium tidak tersedia — menampilkan lokasi sebagai tabel saja.")
+                df_map2 = df_upload.rename(columns={"lat": "latitude", "lon": "longitude"})
+                st.map(df_map2[["latitude", "longitude"]])
 
-# Footer: petunjuk debug jika ada error import
+    except Exception as e:
+        st.error("Gagal membaca file CSV")
+        st.write(e)
+
+# =============================================
+# FOOTER
+# =============================================
 st.markdown("---")
-st.caption("Jika mengalami `ModuleNotFoundError: folium`, jalankan: `pip install folium streamlit-folium`. Untuk deploy ke Streamlit Cloud, pastikan file requirements.txt ada di repo Anda.")
-
-# Contoh requirements.txt (letakkan di proyek Anda jika mau deploy):
-# streamlit
-# pandas
-# folium
-# streamlit-folium
-# NOTE: tambahkan versi paket jika diperlukan, mis. folium==0.14.0
+st.caption("Aplikasi Peta Digital Kampus - Streamlit Python (Final Version - Stabil)
+Pastikan folium sudah terinstall agar peta interaktif aktif.")
