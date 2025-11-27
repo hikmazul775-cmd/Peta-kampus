@@ -1,6 +1,6 @@
 # =============================================
-# FINAL - APLIKASI PETA DIGITAL KAMPUS UNASMAN
-# STREAMLIT + PYTHON (STABIL)
+# FINAL - PETA DIGITAL KAMPUS SE-SULAWESI BARAT
+# STREAMLIT + PYTHON
 # =============================================
 # Cara menjalankan:
 # 1. pip install streamlit pandas folium streamlit-folium
@@ -22,46 +22,57 @@ except Exception:
 # =============================================
 # KONFIGURASI HALAMAN
 # =============================================
-st.set_page_config(page_title="Peta Digital Kampus UNASMAN", layout="wide")
-st.title("📍 Aplikasi Peta Digital Kampus Universitas Al Asyariah Mandar")
-st.write("Menampilkan peta interaktif lokasi gedung dan fasilitas Kampus UNSA.")
+st.set_page_config(page_title="Peta Kampus Sulawesi Barat", layout="wide")
+st.title("📍 Peta Digital Kampus di Provinsi Sulawesi Barat")
+st.write("Menampilkan peta interaktif berbagai kampus dan perguruan tinggi di seluruh Sulawesi Barat.")
 
 # =============================================
-# DATA DEFAULT - TITIK LOKASI DI KAMPUS UNSA
-# (Simulasi posisi sekitar koordinat kampus)
+# DATA KAMPUS SELURUH SULBAR
 # =============================================
 data = {
     "nama": [
-        "Rektorat",
-        "Perpustakaan",
-        "Gedung Fakultas Kesehatan",
-        "Gedung Fakultas Teknik",
-        "Masjid Kampus",
-        "Lapangan Olahraga"
+        "Universitas Sulawesi Barat (Unsulbar)",
+        "Universitas Al Asyariah Mandar (UNSA)",
+        "Institut Agama Islam DDI Polman",
+        "Universitas Tomakaka (Untika) Mamuju",
+        "STIE Muhammadiyah Mamuju",
+        "Politeknik Negeri Mamuju",
+        "STIKES Bina Generasi Polewali",
+        "STKIP Parman Majene",
+        "STIP YAPI Polman"
     ],
     "lat": [
-        -3.404352,     # Rektorat
-        -3.404150,     # Perpustakaan
-        -3.404700,     # Fikes
-        -3.403900,     # Fakultas Teknik
-        -3.404500,     # Masjid
-        -3.403600      # Lapangan
+        -3.540200,   # Unsulbar Majene
+        -3.404352,   # UNSA Polman
+        -3.459800,   # IAI DDI Polman
+        -2.680180,   # Untika Mamuju
+        -2.672700,   # STIE Muhammadiyah
+        -2.647550,   # Politeknik Negeri Mamuju
+        -3.432500,   # STIKES Bina Generasi
+        -3.540700,   # STKIP Parman
+        -3.432100    # STIP YAPI Polman
     ],
     "lon": [
-        119.305593,    # Rektorat
-        119.305800,    # Perpustakaan
-        119.305300,    # Fikes
-        119.306000,    # Fakultas Teknik
-        119.305450,    # Masjid
-        119.306200     # Lapangan
+        118.970500,  # Unsulbar Majene
+        119.305593,  # UNSA Polman
+        119.326800,  # IAI DDI Polman
+        118.885890,  # Untika Mamuju
+        118.898700,  # STIE Muhammadiyah
+        118.884200,  # Politeknik Mamuju
+        119.354300,  # STIKES Bina Generasi
+        118.977000,  # STKIP Parman
+        119.348900   # STIP YAPI Polman
     ],
     "kategori": [
-        "Administrasi",
-        "Fasilitas",
-        "Akademik",
-        "Akademik",
-        "Fasilitas",
-        "Fasilitas"
+        "Universitas",
+        "Universitas",
+        "Institut",
+        "Universitas",
+        "Sekolah Tinggi",
+        "Politeknik",
+        "Sekolah Tinggi",
+        "Sekolah Tinggi",
+        "Sekolah Tinggi"
     ]
 }
 
@@ -70,9 +81,9 @@ df = pd.DataFrame(data)
 # =============================================
 # SIDEBAR FILTER
 # =============================================
-st.sidebar.header("🎛️ Filter Lokasi")
+st.sidebar.header("🎛️ Filter Lokasi Kampus")
 kategori_pilihan = st.sidebar.multiselect(
-    "Pilih kategori:",
+    "Pilih kategori perguruan tinggi:",
     options=df['kategori'].unique(),
     default=df['kategori'].unique()
 )
@@ -80,16 +91,15 @@ kategori_pilihan = st.sidebar.multiselect(
 df_filter = df[df['kategori'].isin(kategori_pilihan)]
 
 # =============================================
-# TAMPILAN PETA
+# TAMPILAN PETA (CENTER = TENGAH SULBAR)
 # =============================================
-st.subheader("🗺️ Peta Kampus UNASMAN")
+st.subheader("🗺️ Peta Kampus di Sulawesi Barat")
 
-# fallback coordinates (menggunakan koordinat UNSA)
-center_lat = -3.404352
-center_lon = 119.305593
+center_lat = -3.2
+center_lon = 119.1
 
 if folium_available:
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=18)
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=9)
 
     cluster = MarkerCluster().add_to(m)
 
@@ -103,31 +113,24 @@ if folium_available:
             location=[row['lat'], row['lon']],
             popup=popup,
             tooltip=row['nama'],
-            icon=folium.Icon(color="blue", icon="info-sign")
+            icon=folium.Icon(color="blue", icon="university")
         ).add_to(cluster)
 
     if st.sidebar.checkbox("Tampilkan Heatmap"):
         heat_data = df_filter[["lat", "lon"]].values.tolist()
-        if heat_data:
-            HeatMap(heat_data).add_to(m)
+        HeatMap(heat_data).add_to(m)
 
     st_folium(m, width=900, height=600)
 
 else:
-    st.warning(
-        "Folium belum terinstall. Menampilkan peta sederhana.\n"
-        "Install dengan: pip install folium streamlit-folium"
-    )
-    if not df_filter.empty:
-        df_map = df_filter.rename(columns={"lat": "latitude", "lon": "longitude"})
-        st.map(df_map[["latitude", "longitude"]])
-    else:
-        st.info("Tidak ada data lokasi untuk ditampilkan pada peta sederhana.")
+    st.warning("Folium tidak tersedia. Menggunakan tampilan peta default Streamlit.")
+    df_map = df_filter.rename(columns={"lat": "latitude", "lon": "longitude"})
+    st.map(df_map[["latitude", "longitude"]])
 
 # =============================================
 # TABEL DATA
 # =============================================
-st.subheader("📊 Data Lokasi Kampus UNASMAN")
+st.subheader("📊 Daftar Kampus di Sulawesi Barat")
 st.dataframe(df_filter)
 
 # =============================================
@@ -139,18 +142,18 @@ uploaded_file = st.file_uploader("Upload CSV (nama, lat, lon, kategori)", type="
 if uploaded_file is not None:
     try:
         df_upload = pd.read_csv(uploaded_file)
-        st.success("File berhasil diupload!")
+        st.success("Upload berhasil!")
 
         if not {'nama', 'lat', 'lon'}.issubset(df_upload.columns):
             st.error("CSV wajib memiliki kolom: nama, lat, lon")
         else:
             st.dataframe(df_upload)
 
-            up_center_lat = df_upload['lat'].mean() if not df_upload.empty else center_lat
-            up_center_lon = df_upload['lon'].mean() if not df_upload.empty else center_lon
+            avg_lat = df_upload['lat'].mean()
+            avg_lon = df_upload['lon'].mean()
 
             if folium_available:
-                m2 = folium.Map(location=[up_center_lat, up_center_lon], zoom_start=18)
+                m2 = folium.Map(location=[avg_lat, avg_lon], zoom_start=10)
 
                 for _, row in df_upload.iterrows():
                     folium.Marker(
@@ -161,23 +164,13 @@ if uploaded_file is not None:
 
                 st.subheader("🗺️ Peta dari CSV")
                 st_folium(m2, width=900, height=600)
-            else:
-                df_map2 = df_upload.rename(columns={"lat": "latitude", "lon": "longitude"})
-                if not df_map2.empty:
-                    st.map(df_map2[["latitude", "longitude"]])
-                else:
-                    st.info("CSV kosong, tidak ada data peta untuk ditampilkan.")
 
     except Exception as e:
-        st.error("Gagal membaca file CSV")
+        st.error("Gagal membaca CSV!")
         st.write(e)
 
 # =============================================
 # FOOTER
 # =============================================
 st.markdown("---")
-st.caption(
-    "Aplikasi Peta Digital Kampus UNSA - Streamlit Python (Final Version)\n"
-    "Pastikan folium sudah terinstall agar peta interaktif aktif."
-)
-
+st.caption("Peta Digital Kampus Sulawesi Barat · Streamlit + Python")
