@@ -83,10 +83,16 @@ df_filter = df[df['kategori'].isin(kategori_pilihan)]
 # =============================================
 st.subheader("🗺️ Peta Kampus")
 
-if folium_available:
+# fallback coordinates if df_filter empty
+if df_filter.empty:
+    # gunakan rata-rata seluruh dataset atau 0 jika juga kosong
+    center_lat = df['lat'].mean() if not df.empty else 0
+    center_lon = df['lon'].mean() if not df.empty else 0
+else:
     center_lat = df_filter['lat'].mean()
     center_lon = df_filter['lon'].mean()
 
+if folium_available:
     m = folium.Map(location=[center_lat, center_lon], zoom_start=17)
 
     cluster = MarkerCluster().add_to(m)
@@ -106,18 +112,23 @@ if folium_available:
 
     if st.sidebar.checkbox("Tampilkan Heatmap"):
         heat_data = df_filter[["lat", "lon"]].values.tolist()
-        HeatMap(heat_data).add_to(m)
+        if heat_data:
+            HeatMap(heat_data).add_to(m)
 
     st_folium(m, width=900, height=600)
 
 else:
+    # Perbaikan: gunakan satu string (tanpa memecah baris dengan tanda kutip yang belum ditutup)
     st.warning(
-        "Folium belum terinstall. Menampilkan peta sederhana. 
-"
+        "Folium belum terinstall. Menampilkan peta sederhana.\n"
         "Install dengan: pip install folium streamlit-folium"
     )
-    df_map = df_filter.rename(columns={"lat": "latitude", "lon": "longitude"})
-    st.map(df_map[["latitude", "longitude"]])
+    # ubah nama kolom supaya st.map menerima latitude/longitude
+    if not df_filter.empty:
+        df_map = df_filter.rename(columns={"lat": "latitude", "lon": "longitude"})
+        st.map(df_map[["latitude", "longitude"]])
+    else:
+        st.info("Tidak ada data lokasi untuk ditampilkan pada peta sederhana.")
 
 # =============================================
 # TABEL DATA
@@ -141,11 +152,16 @@ if uploaded_file is not None:
         else:
             st.dataframe(df_upload)
 
+            # fallback center coords for uploaded file
+            if df_upload.empty:
+                up_center_lat = df['lat'].mean() if not df.empty else 0
+                up_center_lon = df['lon'].mean() if not df.empty else 0
+            else:
+                up_center_lat = df_upload['lat'].mean()
+                up_center_lon = df_upload['lon'].mean()
+
             if folium_available:
-                m2 = folium.Map(
-                    location=[df_upload['lat'].mean(), df_upload['lon'].mean()],
-                    zoom_start=17
-                )
+                m2 = folium.Map(location=[up_center_lat, up_center_lon], zoom_start=17)
 
                 for _, row in df_upload.iterrows():
                     folium.Marker(
@@ -158,7 +174,10 @@ if uploaded_file is not None:
                 st_folium(m2, width=900, height=600)
             else:
                 df_map2 = df_upload.rename(columns={"lat": "latitude", "lon": "longitude"})
-                st.map(df_map2[["latitude", "longitude"]])
+                if not df_map2.empty:
+                    st.map(df_map2[["latitude", "longitude"]])
+                else:
+                    st.info("CSV kosong, tidak ada data peta untuk ditampilkan.")
 
     except Exception as e:
         st.error("Gagal membaca file CSV")
@@ -168,5 +187,7 @@ if uploaded_file is not None:
 # FOOTER
 # =============================================
 st.markdown("---")
-st.caption("Aplikasi Peta Digital Kampus - Streamlit Python (Final Version - Stabil)
-Pastikan folium sudah terinstall agar peta interaktif aktif.")
+st.caption(
+    "Aplikasi Peta Digital Kampus - Streamlit Python (Final Version - Stabil)\n"
+    "Pastikan folium sudah terinstall agar peta interaktif aktif."
+)
