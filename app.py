@@ -27,7 +27,7 @@ st.title("📍 Aplikasi Peta Digital Kampus Universitas Al Asyariah Mandar")
 st.write("Menampilkan peta interaktif lokasi gedung dan fasilitas Kampus UNSA.")
 
 # =============================================
-# DATA DEFAULT - TITIK LOKASI DI KAMPUS UNASMAN
+# DATA DEFAULT - TITIK LOKASI DI KAMPUS UNSA
 # (Simulasi posisi sekitar koordinat kampus)
 # =============================================
 data = {
@@ -180,4 +180,3 @@ st.caption(
     "Aplikasi Peta Digital Kampus UNSA - Streamlit Python (Final Version)\n"
     "Pastikan folium sudah terinstall agar peta interaktif aktif."
 )
-
