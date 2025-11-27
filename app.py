@@ -1,5 +1,5 @@
 # =============================================
-# FINAL - APLIKASI PETA DIGITAL KAMPUS UNSA
+# FINAL - APLIKASI PETA DIGITAL KAMPUS UNASMAN
 # STREAMLIT + PYTHON (STABIL)
 # =============================================
 # Cara menjalankan:
@@ -22,7 +22,7 @@ except Exception:
 # =============================================
 # KONFIGURASI HALAMAN
 # =============================================
-st.set_page_config(page_title="Peta Digital Kampus UNSA", layout="wide")
+st.set_page_config(page_title="Peta Digital Kampus UNASMAN", layout="wide")
 st.title("📍 Aplikasi Peta Digital Kampus Universitas Al Asyariah Mandar")
 st.write("Menampilkan peta interaktif lokasi gedung dan fasilitas Kampus UNSA.")
 
@@ -82,7 +82,7 @@ df_filter = df[df['kategori'].isin(kategori_pilihan)]
 # =============================================
 # TAMPILAN PETA
 # =============================================
-st.subheader("🗺️ Peta Kampus UNSA")
+st.subheader("🗺️ Peta Kampus UNASMAN")
 
 # fallback coordinates (menggunakan koordinat UNSA)
 center_lat = -3.404352
@@ -127,7 +127,7 @@ else:
 # =============================================
 # TABEL DATA
 # =============================================
-st.subheader("📊 Data Lokasi Kampus UNSA")
+st.subheader("📊 Data Lokasi Kampus UNASMAN")
 st.dataframe(df_filter)
 
 # =============================================
@@ -180,3 +180,4 @@ st.caption(
     "Aplikasi Peta Digital Kampus UNSA - Streamlit Python (Final Version)\n"
     "Pastikan folium sudah terinstall agar peta interaktif aktif."
 )
+
