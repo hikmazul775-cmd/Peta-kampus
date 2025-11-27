@@ -1,6 +1,6 @@
 # =============================================
 # FINAL - PETA DIGITAL KAMPUS SE-SULAWESI BARAT
-# STREAMLIT + PYTHON
+# STREAMLIT + PYTHON + FITUR PENCARIAN KAMPUS
 # =============================================
 # Cara menjalankan:
 # 1. pip install streamlit pandas folium streamlit-folium
@@ -88,7 +88,18 @@ kategori_pilihan = st.sidebar.multiselect(
     default=df['kategori'].unique()
 )
 
+# Filter kategori
 df_filter = df[df['kategori'].isin(kategori_pilihan)]
+
+# =============================================
+# FITUR PENCARIAN KAMPUS
+# =============================================
+st.sidebar.header("🔍 Cari Kampus")
+search_query = st.sidebar.text_input("Masukkan nama kampus:")
+
+if search_query:
+    df_filter = df_filter[df_filter['nama'].str.contains(search_query, case=False, na=False)]
+    st.sidebar.success(f"Ditemukan {len(df_filter)} kampus sesuai pencarian")
 
 # =============================================
 # TAMPILAN PETA (CENTER = TENGAH SULBAR)
